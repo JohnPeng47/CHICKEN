@@ -2,7 +2,6 @@ var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var readline = require('readline');
-var compressor = require('node-minify');
 var fs = require('fs');
 
 rl = readline.createInterface(process.stdin, process.stdout);
