@@ -1,4 +1,5 @@
-This is a small security project that I put together in my spare time, and is inspired by the BEEF browser exploitation framework and XSStrike Comprises two parts: 
+This is a small security project that I put together in my spare time, and is inspired by the BEEF browser exploitation framework and XSStrike 
+Comprises two parts: 
 1) A script to automatically generate a Reflective XSS payload
 2) The payload itself which starts reverse shell using a WebSocket client in the injected JS context that communicates back to our listening server. Arbitrary commands can then be sent thru the reverse shell to be executed inside the injected JS context. 
 
