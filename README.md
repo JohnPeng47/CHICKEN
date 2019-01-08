@@ -6,7 +6,7 @@ Comprises two parts:
 Usage Steps:
 1. Install Python3 (Tested with 3.6.6 but will probably work for other versions)
 2. Run "npm install"
-3. Run "python3 xss.py <website>" to scan for possible Reflective XSS 
+3. Run "python3 xss.py website" to scan for possible Reflective XSS on website
 4. If the Step 3 is successful, copy the output (it should contain an URL with payload embedded inside a GET parameter) open it in a browser window
 5. Start listening server with "node server.js"
 6. $$$
