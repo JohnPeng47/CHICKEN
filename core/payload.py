@@ -1,8 +1,9 @@
-hello = 1
-def genPayload(ctxt):
-    print "Generating payload >>>>>>>"
-    print ctxt.quotes
-    print ctxt.between_or_inside
-    print ctxt.html_tag
-    print ctxt.tag_attribute
+from core.config import WSpayload, specialTagAttrs
 
+def genPayload(ctxt):
+    print WSpayload
+    payload = "" 
+    if ctxt.between_or_inside == "<>":
+        if ctxt.tag_attribute not in specialTagAttrs and not ctxt.script:
+            if ctxt.quotes == "\"":
+                payload = 

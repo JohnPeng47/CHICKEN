@@ -19,11 +19,12 @@ from core.config import test, eventHandlers, specialTagAttrs
 reflectedContexts = []
 
 class Context:
-    def __init__(self, quotes, between_or_inside, html_tag, tag_attribute):
+    def __init__(self, quotes, between_or_inside, html_tag, tag_attribute, script=False):
         self.quotes = quotes
         self.between_or_inside = between_or_inside
         self.html_tag = html_tag
         self.tag_attribute = tag_attribute
+        self.script = script
 
 def getContext(res):
     contexts = res.text.split(test)
@@ -32,14 +33,10 @@ def getContext(res):
         return False
     
     for left, right in zip(contexts, contexts[1:]):
-        # following makeup the context
         quotes = ""
         between_or_inside = ""
         html_tag = "" 
         tag_attribute = ""
-        # TODO: add script parsing stuff
-
-        # start from the end of beginning and look for 
         between_or_inside = parse_between_or_inside(left, right)
         if between_or_inside == "><": # or "between" ??
             html_tag = parse_html_tag(left, right)
@@ -91,7 +88,6 @@ def find_first(ctxt, char1, char2, reverse = False):
 
 # below two functions are similiar in structure, could be changed
 def parse_single_or_double_quotes(left, right):
-    print left[len(left) - 1], right[:2]
     left_quote = find_first(left, "\'", "\"", reverse = True)
     right_quote = find_first(right, "\'", "\"", reverse = False)
 
