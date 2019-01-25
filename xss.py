@@ -6,6 +6,7 @@ from functools import reduce
 from random import choice
 
 from core.context import getContext
+from core.payload import genPayload
 
 test = "6ix8uzz"
 headers = {
@@ -57,7 +58,8 @@ print test_response
 reflection_contexts = getContext(test_response)
 
 payloads = {}
-for i in range(len(relfection_contexts)):
+for i in range(len(reflection_contexts)):
+    print "Generating payload for {}".format(i)
     payloads[test + str(i)] = genPayload(reflection_contexts[i])
 
 # look for test string in the response
