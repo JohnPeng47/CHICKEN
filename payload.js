@@ -13,7 +13,10 @@ document.querySelector("head").appendChild(script);
 setTimeout(function(){
 	socket = io("ws://127.0.0.1:3000");
 	socket.on("cmd", function(cmd){
-		console.log("executing", cmd);
-		eval(cmd);
+        console.log("executing", cmd);
+    	var res = eval(cmd);
+        if(res){
+            socket.emit("output", res);
+        }
 	})
 }, 3000);

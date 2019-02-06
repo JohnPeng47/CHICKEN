@@ -1,12 +1,14 @@
 # input used to test for injection
 # TODO: add more eventHandlers
 # TODO: add more specialTagAttr
-test = "6ix8uzz"
+TEST_INJCT = "6ix8uzz"
+
 eventHandlers = ["onload", "onclick",  "onmouseover"]
 specialTagAttrs = ["src", "href"]
 tags = ["div"]
 
-WSpayload = reduce(lambda x, y : x + y, map(lambda x : x.strip(), open("payload.js").read().split('\n')))
+# inputs that may be filtered
+filtered_inputs = ["<", ">", "script", "\'", "\""]
 
 headers = {
     'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36',
