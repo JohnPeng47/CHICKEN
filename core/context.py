@@ -1,7 +1,7 @@
 import re
 from itertools import izip
 
-from core.config import TEST_INJCT, eventHandlers, specialTagAttrs
+from config import TEST_INJCT, eventHandlers, specialTagAttrs
 
 # from core.logging import log <--- do we need a logging module ?
 
@@ -100,7 +100,7 @@ def parse_html_tag(left):
     index_dict = {og_index: rev_index for rev_index, og_index in zip(range(len(left), 0, -1), range(0, len(left)))}
     index = index_dict[r_index]
 
-    html = left[index+1:]split()[0]
+    html = left[index+1:].split()[0]
 
     print "html >>>>> " + html
     return html

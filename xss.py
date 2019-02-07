@@ -33,17 +33,14 @@ test_response = requests.get(url, headers=headers, params=data)
 
 reflection_contexts = getContext(test_response)
 
-# test the WAF/Filter with a list of commonly filtered chars: <,>,",', etc..
-filtered = testFilter(url, reflection_contexts, data)
-
 payloads = {}
-url = url if url[-1:] == '/' else url + '/' + '?'
+url = url if url[-1:] == '/' else url + '/'
 
 for i, ctx in enumerate(reflection_contexts):
     test_input = TEST_INJCT + ctx.paramNum 
     param = get_key_from_val(test_input, data)
     if param:
-        payloads[param] = url + param + "=" + genPayload(ctx, filtered)
+        payloads[param] = genPayload(ctx, url, param)
 
 print "Payloads ..."
 for v in payloads.values():
